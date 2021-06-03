@@ -173,5 +173,87 @@ UDPXY_ALLOW_PAUSES     - if blocked on a write, keep reading data until the buff
 UDPXY_PAUSE_MSEC       - allow only N milliseconds of reading data when blocked on a write.
 UDPXY_CONTENT_TYPE     - specify custom Content-Type in HTTP responses.
 
+交叉编译的方法
+--------------
+在Makefile最上方添加
+CC=工具链
+示例：
+CC=aarch64-openwrt-linux-gcc
+
+使用方法
+--------------
+udpxy [-vTS] [-a <listenaddr>] [-m <mcast_ifc_addr>] [-c <clients>] [-l <logfile>] [-B <sizeK>] [-R <msgs>] [-H <sec>] [-n <nice_incr>] [-M <sec>] -p <port>
+描述
+udpxy是UDP到HTTP多播流量中继守护程序：它将UDP流量从给定的多播订阅转发到请求的HTTP客户端。
+
+udpxy监听（在专用地址/端口上）客户端发出的HTTP请求。客户请求的结构应为：
+http：//{ address }：{ port }/{ cmd }/{ mgroup_address }[ SEP ]{ mgroup_port }
+
+cmd具有UDP与RTP两种
+UDP
+# udp命令将对已知类型的有效负载（例如MPEG-TS和MPEG-TS上的RTP）进行udpxy探测;
+RTP
+# rtp命令使udpxy假定RTP超过MPEG-TS有效载荷，从而跳过探测器。
+
+udpxy将为每个新的中继请求启动一个单独的客户端进程（在活动客户端的指定限制内​​）。客户端进程将（从UDP套接字）接收的所有网络流量从指定的多播组中继/转发到请求的HTTP连接。
+
+udpxy还支持一些管理请求：
+
+状态
+http：// address：port / status 
+#发回带有守护程序状态和客户端统计信息的HTML页面。
+
+重新启动
+http：// address：port / restart 
+#关闭所有活动连接并重启。
+
+示例
+http://192.168.0.12:5056/udp/224.0.2.26:24012
+http://192.168.0.12:5056/rtp/224.0.2.26:24012
+http://192.168.0.15:5056/rtp/224.0.2.26^24055
+http://192.168.0.15:5056/status/
+
+选项
+udpxy接受以下选项：
+
+-v
+# 启用详细输出[default = disabled ]。
+ 
+-S
+# 启用客户端统计信息[default = disabled ]。
+ 
+-T
+# 不要作为守护进程运行[default = daemon if root ]。
+ 
+-a <listenaddr>
+# 要侦听的IPv4地址/接口[default = 0.0.0.0 ]。
+ 
+-m <mcast_ifc_addr>
+# （组播）源的IPv4地址/接口[默认= 0.0.0.0 ]。
+ 
+-c <clients>
+# 要接受的最大客户端数[default = 3，max = 5000 ]。
+ 
+-l <logfile>
+# 将输出记录到文件[default = stderr ]。
+ 
+-B <sizeK>
+# 入站（多播）数据的缓冲区大小（65536,32Kb，1Mb）[默认= 2048字节 ]。
+ 
+-R <msgs>
+# 要缓冲的最大消息数（-1 = 全部）[default = 1 ]。
+ 
+-H <sec>
+# 在缓冲区中保存数据的最长时间（以秒为单位）（- 1 = 无限制）[默认值= 1 ]。
+ 
+-n <nice_incr>
+# 好的值增量[default = 0 ]。
+ 
+-M <sec>
+# 每M秒更新一次多播订阅（如果为0则跳过）[default = 0 ]。
+ 
+-p <port>
+# 端口。
+
 --EOF--
 
